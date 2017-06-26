@@ -37,7 +37,7 @@ tags:
 * Finger -> WebFinger
 * IRC -> IRCCloud
 * yes ->Twitter
-* tar -cvf | gzip -> Box
+* tar -cvf  gzip -> Box
 * find-> Grindr
 * wall -> Facebook
 * vim -> Yo
@@ -75,7 +75,7 @@ tags:
 * tee -> NSA
 * id / whoami -> about.me
 * mount -> tinder?
-* cat|sed->YQL
+* cat sed->YQL
 * cat -> icanhascheezburger
 * syslogd->loggly/splunk
 * kill -> http://healthcare.gov 
