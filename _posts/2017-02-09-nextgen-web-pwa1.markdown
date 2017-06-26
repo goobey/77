@@ -1,9 +1,9 @@
 ---
 layout:     post
 title:      "一天可以学会的实用计算机技术"
-subtitle:   "一天可以学会的实用计算机技术"
+subtitle:   ""
 date:       2017-06-26 12:00:00
-author:     "互联网"
+author:     ""
 header-img: ""
 header-mask: 0.3
 catalog:    true
@@ -15,7 +15,7 @@ tags:
 
 
 
-## 一天可以学会的实用计算机技术
+
 **Technical 技术类**
 
 1. 版本控制 (Version control): Git, GitHub and SVN
@@ -67,4 +67,3 @@ tags:
 4. 焊接 (Learn how to weld)
 5. 打字 (Learn to type)
 6. 约会(Go out with a girl/boy)
-
