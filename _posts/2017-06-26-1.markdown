@@ -15,83 +15,84 @@ tags:
 
 >这个思路是我偶然在微博和Twitter看到的，大受启发，今天抽空把网友跟帖不加甄别的摘录了出来，没有标准答案，大家尽情想象吧。不懂Linux命令的朋友估计看起来很吃力，不明觉厉，没关系这些都是纸老虎，查查手册你就会懂了。
 
-Grep -> Google
-rsync -> Dropbox
-man -> stack overflow
-cron -> ifttt
-finger -> facebook
-finger-> linkedin
-vim -> Medium?
-ls -> yahoo?
-echo -> twitter
-whois -> linked in
-/dev/null -> g+…
-sed -> Google Docs?
-sudo -> lastpass
-cat -> 4chan
-talk -> IM
-chmod -> lockitron
-ping -> yo
-Grep -> Greplin
-Tar -> Tarsnap
-Finger -> WebFinger
-IRC -> IRCCloud
-yes ->Twitter
-tar -cvf | gzip -> Box
-find-> Grindr
-wall -> Facebook
-vim -> Yo
-Samba -> Box
-tmux/screen -> vmware
-vrms -> RMS
-convert -> http://revisit.link
-biff -> twitter?
-man ->Yahoo Answers!
-useradd -> geocities
-ls -> hotornot
-whois -> Uber
-netcat -> Push for Pizza
-bc -> Wolfram Alpha
-cowsay -> Kozmo
-n -> bit.ly
-ls -> yahoo
-passwd -> duo security
-top -> stack driver
-python -> gae
-vi -> evernote
-mail -> gmail
-ntpsweep -> ddos
-bash -> botnet
-write -> qq
-nslookup -> 3721
-rm -> 360
-banner -> Medium
-chmod -> Palantir
-/dev/null -> Path
-cat -> reddit
-emacs -> github
-mount -> youporn.com 
-ln -> tumblr
-tee -> NSA
-id / whoami -> about.me
-mount -> tinder?
-cat|sed->YQL
-cat -> icanhascheezburger
-syslogd->loggly/splunk
-kill -> http://healthcare.gov 
-fork -> CDN
-sudo -> GFW
-top -> 360safe
-cp -> tencent 
-kill -9 -> gov.cn
-iptables -> GFW
-cowsay -> twitter
-git -> github? 
-mail -> gmail?
-talk -> qq
-wget -> thunder
-ls + cd -> Hao123
-diff -> turnitin
-top -> alexa
-route -> google map
+* Grep -> Google
+* rsync -> Dropbox
+* man -> stack overflow
+* cron -> ifttt
+* finger -> facebook
+* finger-> linkedin
+* vim -> Medium?
+* ls -> yahoo?
+* echo -> twitter
+* whois -> linked in
+* /dev/null -> g+…
+* sed -> Google Docs?
+* sudo -> lastpass
+* cat -> 4chan
+* talk -> IM
+* chmod -> lockitron
+* ping -> yo
+* Grep -> Greplin
+* Tar -> Tarsnap
+* Finger -> WebFinger
+* IRC -> IRCCloud
+* yes ->Twitter
+* tar -cvf | gzip -> Box
+* find-> Grindr
+* wall -> Facebook
+* vim -> Yo
+* Samba -> Box
+* tmux/screen -> vmware
+* vrms -> RMS
+* convert -> http://revisit.link
+* biff -> twitter?
+* man ->Yahoo Answers!
+* useradd -> geocities
+* ls -> hotornot
+* whois -> Uber
+* netcat -> Push for Pizza
+* bc -> Wolfram Alpha
+* cowsay -> Kozmo
+* n -> bit.ly
+* ls -> yahoo
+* passwd -> duo security
+* top -> stack driver
+* python -> gae
+* vi -> evernote
+* mail -> gmail
+* ntpsweep -> ddos
+* bash -> botnet
+* write -> qq
+* nslookup -> 3721
+* rm -> 360
+* banner -> Medium
+* chmod -> Palantir
+* /dev/null -> Path
+* cat -> reddit
+* emacs -> github
+* mount -> youporn.com 
+* ln -> tumblr
+* tee -> NSA
+* id / whoami -> about.me
+* mount -> tinder?
+* cat|sed->YQL
+* cat -> icanhascheezburger
+* syslogd->loggly/splunk
+* kill -> http://healthcare.gov 
+* fork -> CDN
+* sudo -> GFW
+* top -> 360safe
+* cp -> tencent 
+* kill -9 -> gov.cn
+* iptables -> GFW
+* cowsay -> twitter
+* git -> github? 
+* mail -> gmail?
+* talk -> qq
+* wget -> thunder
+* ls + cd -> Hao123
+* diff -> turnitin
+* top -> alexa
+* route -> google map
+
 
