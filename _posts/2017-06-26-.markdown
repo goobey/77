@@ -3,7 +3,7 @@ layout:     post
 title:      "一天可以学会的实用计算机技术"
 subtitle:   "一天可以学会的实用计算机技术"
 date:       2017-06-26 12:00:00
-author:     "Hux"
+author:     ""
 header-img: ""
 header-mask: 0.3
 catalog:    true
@@ -16,7 +16,7 @@ tags:
 
 
 
-## 一天可以学会的实用计算机技术
+# 一天可以学会的实用计算机技术
 **Technical 技术类**
 
 1. 版本控制 (Version control): Git, GitHub and SVN
