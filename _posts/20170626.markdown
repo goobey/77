@@ -15,7 +15,7 @@ tags:
 
 
 
-# 一天可以学会的实用计算机技术
+## 一天可以学会的实用计算机技术
 **Technical 技术类**
 
 1. 版本控制 (Version control): Git, GitHub and SVN
