@@ -17,29 +17,32 @@ tags:
 
 ---
 
-##	1. 环境:
-	操作系统: Ubuntu 16.04 64位
+##	1. 环境准备:
+* 操作系统: Ubuntu 16.04 64位
 	PHP版本: 5.5.14
 	gcc编译组件
 
-### 编译PHP:  
-	先到PHP官网下在我们需要的PHP目标版本源文件.
+* 编译PHP:  先到PHP官网下在我们需要的PHP目标版本源文件.
 	http://php.net/releases/
-	
-	* 安装GCC: apt install gcc make automake libxml2-dev gdb
-	* 解压源码包: tar xvf php-5.5.14.tar.gz
-	* 生成Makefile文件: 进入刚才我们解压好的源码目录执行:./configure --enable-debug --prefix=$HOME/php/php-5.5.14; prefix表示要安装的目录,因为这里我们是搭建调试环境,建议给不同的版本设定不同的目录避免冲突; --enable-debug生成debug版本的程序.
-	* 编译安装:make && make installl
-	* 安装完毕后我们进入安装目录: cd $HOME/php/php-5.5.14/; 执行./bin/php -v输出版本号:  
-	
+* 安装GCC: apt install gcc make automake libxml2-dev gdb
+* 解压源码包: tar xvf php-5.5.14.tar.gz
+* 生成Makefile文件: 进入刚才我们解压好的源码目录执行:./configure --enable-debug --prefix=$HOME/php/php-5.5.14; 
+* prefix表示要安装的目录,因为这里我们是搭建调试环境,建议给不同的版本设定不同的目录避免冲突; --enable-debug生成debug版本的程序.
+* 编译安装:make && make installl
+* 安装完毕后我们进入安装目录: cd $HOME/php/php-5.5.14/; 执行./bin/php -v输出版本号:  
+
+
+```
 	user@localhost:~/php/php-5.5.14$ ./bin/php -v
 	PHP 5.5.14 (cli) (built: Feb  7 2018 15:05:52) (DEBUG)
 	Copyright (c) 1997-2014 The PHP Group
 	Zend Engine v2.5.0, Copyright (c) 1998-2014 Zend Technologies
+```
 
 ## 2. 认识几个数据结构: 
-	* zval: Zval是PHP中最重要的数据结构之一（另一个比较重要的数据结构是hash table），它包含了PHP中的变量值和类型的相关信息,是一个struct，基本结构为：
-
+ * Zval是PHP中最重要的数据结构之一（另一个比较重要的数据结构是hash table），它包含了PHP中的变量值和类型的相关信息,是一个struct，基本结构为：
+	
+```
 		struct _zval_struct {
     		zvalue_value value;     /* value */
     		zend_uint refcount__gc;  /* variable ref count */
@@ -47,14 +50,17 @@ tags:
    			zend_uchar is_ref__gc;    /* if it is a ref variable */
 		};
 		typedef struct _zval_struct zval;
-	
-		可以看到zval实际上是_zval_struct结构的一个别名,它包含了四个成员:
-		value -> zvalue_value类型的一个变量,包含变量的值或引用
-		refcount__gc -> 变量的引用计数
-		type -> 变量的类型,类型请查看源文件定义
-		is_ref__gc -> 标记变量是否是引用变量。对于普通的变量，该值为0，而对于引用型的变量，该值为1。
+```
+ * 可以看到zval实际上是_zval_struct结构的一个别名,它包含了四个成员:
+
+    value -> zvalue_value类型的一个变量,包含变量的值或引用
+    refcount__gc -> 变量的引用计数
+    type -> 变量的类型,类型请查看源文件定义
+    is_ref__gc -> 标记变量是否是引用变量。对于普通的变量，该值为0，而对于引用型的变量，该值为1。
+
+ * 在源文件中我们可以看到zval.type支持以下几种类型:
 		
-		在源文件中我们可以看到zval.type支持以下几种类型:
+```
 		#define IS_NULL     0
 		#define IS_LONG     1
 		#define IS_DOUBLE   2
@@ -66,9 +72,10 @@ tags:
 		#define IS_CONSTANT 8
 		#define IS_CONSTANT_ARRAY   9
 		#define IS_CALLABLE 10
+```
+ * zvalue_value: 它是一个联合体,保存真实的变量或引用.
 
-	* zvalue_value: 它是一个联合体,保存真实的变量或引用.
-
+```
 		typedef union _zvalue_value {
     		long lval;                 
     		double dval;                
@@ -79,8 +86,11 @@ tags:
     		HashTable *ht;              
     		zend_object_value obj;
 		} zvalue_value;
-		
-	* HashTable结构：
+```		
+
+  * HashTable结构: 
+
+```
 	    typedef struct _hashtable {  
         	uint nTableSize; //表长度，并非元素个数  
          	uint nTableMask;//表的掩码，始终等于nTableSize-1  
@@ -95,9 +105,10 @@ tags:
          	unsigned char nApplyCount;  
          	zend_bool bApplyProtection;  
     	} HashTable;  
-	
-	* Bucket结构：HashTable相当于Array对象，而Bucket相当于Array对象里的某个元素。对于多维数组实际就是HashTable的某个Bucket里存储着另一个HashTable。
-		
+```	
+ * Bucket结构：HashTable相当于Array对象，而Bucket相当于Array对象里的某个元素。对于多维数组实际就是HashTable的某个Bucket里存储着另一个HashTable。
+ 
+```
 	    typedef struct bucket {  
         	ulong h; //数组索引  
          	uint nKeyLength; //字符串索引的长度  
@@ -109,35 +120,44 @@ tags:
          	struct bucket *pLast;//双向链表的下一个元素地址  
          	char arKey[1]; /* Must be last element */  
     	} Bucket;  
-		
+```
+
+
 
 ## 3. 看看PHP对象序列化后的数据
-	通过下面的脚本我们可以生成一个DateTimeZone的一个对象,并打印这个对象序列化后的数据:
+ * 通过下面的脚本我们可以生成一个DateTimeZone的一个对象,并打印这个对象序列化后的数据:
+
+```
 	<?php
         $zone = new DateTimeZone('+08:00');
         print(serialize($zone) . "\n");
 	
 	OUT:
 		O:12:"DateTimeZone":2:{s:13:"timezone_type";i:1;s:8:"timezone";s:6:"+08:00";}
-
-	从输出的部分看:O表示对象, :12为对象标签的长度, :2表示对象包含两个键值对; 第一个元素键为timezone_type,值是一个Int类型的1, 第二个元素键为timezone,值是一个字符串.这里就是一个DateTimeZone对象序列化后的数据.
+```
+ * 从输出的部分看:O表示对象, :12为对象标签的长度, :2表示对象包含两个键值对; 第一个元素键为timezone_type,值是一个Int类型的1, 第二个元素键为timezone,值是一个字符串.这里就是一个DateTimeZone对象序列化后的数据.
+ 
 	当PHP在进行反序列化的时候会将上面字符串解析并填充到zval与zvalue_value等数据结构中.
 
 ## 4. 反序列化
-	PHP中对应的反序列化函数是:unserialize,在原代码中对应的函数是php_var_unserialize.下面我们通过gdb来看一下,DateTimeZone在内存中的结构.
 
+ * PHP中对应的反序列化函数是:unserialize,在原代码中对应的函数是php_var_unserialize.下面我们通过gdb来看一下,DateTimeZone在内存中的结构.
+
+```
 	* 启动gdb: gdb -tui php/php-5.5.14/bin/php
 
 		在运行脚本之前,先在php_var_unserialize这个函数的入口下一个断点:
 		(gdb) break php_var_unserialize
 		Breakpoint 1 at 0x75b5ce: file /home/xxxx/package/php-5.5.14/ext/standard/var_unserializer.c, line 455.
-
-	* 运行脚本:
+```
+```
+    *启动脚本
 		(gdb) run t1.php
 		Starting program: /home/xxxx/php/php-5.5.14/bin/php t1.php
 		Breakpoint 1, php_var_unserialize (rval=0x7fffffffab60, p=0x7fffffffab80, max=0x7ffff7ec5bfd "", var_hash=0x7fffffffab88) at /home/qing/package/php-5.5.14/ext/standard/var_unserializer.c:455
 		
 		程序执行到断点暂停,看看C源码部分:
+
 		 PHPAPI int php_var_unserialize(UNSERIALIZE_PARAMETER)                                                                                                                                                                                                                                                                                                                                         │
    		 │456             const unsigned char *cursor, *limit, *marker, *start;                                                                                                                                     │
    		 │457             zval **rval_ref;                                                                                                                                                                          │
@@ -148,7 +168,9 @@ tags:
 		这里的cursor指向的字符串就是马上要进行反序列化的字符串;
 		(gdb) p cursor
 		$10 = (const unsigned char *) 0x7ffff7ec5bb0 "O:12:\"DateTimeZone\":2:{s:13:\"timezone_type\";i:1;s:8:\"timezone\";s:6:\"+08:00\";}" 
+```
 
+```
 	* (gdb)next 运行到919行:
 		   │916                                                                                                                                                                                                       │
   		   │917             INIT_PZVAL(*rval);                                                                                                                                                                        │
@@ -160,7 +182,9 @@ tags:
 		$14 = {value = {lval = 140737353987632, dval = 6.9533491691887539e-310, str = {val = 0x7ffff7fdb630 "timezone_type", len = 13}, ht = 0x7ffff7fdb630, obj = {handle = 4160599600, handlers = 0xd}},
   		refcount__gc = 1, type = 6 '\006', is_ref__gc = 0 '\000'}
 		这是一个zval结构体，value指向了zvalue_value，它的值是一个字符串“timezone_type”,长度为13，refcount__gc等于1表示当前有个一个符号引用到自己，type等于6表示这是一个字符串。
+```
 
+```
 	* 从上面几个步骤可以看到序列化后的字符串的文本在经过php_var_unserialize函数后被转换成了zval结构类型的数据.当然这还不是一个DateTimeZone对象, 再来看看源代码:
 		
 		PHP_METHOD(DateTimeZone, __wakeup)
@@ -178,8 +202,11 @@ tags:
 	* 从名字可以看出这就是DateTimeZone的__wakeup魔术方法,在数据进行反序列化的时候这个方法会被调用. 方法的最后调用了php_date_timezone_initialize_from_hash函数,可以在这个函数上下断点,来观察一下这个函数干了什么:
 		(gdb)break php_date_timezone_initialize_from_hash
 		
- 		
-		C源码:
+```	
+
+```
+    * C源码:
+	
 		static int php_date_timezone_initialize_from_hash(zval **return_value, php_timezone_obj **tzobj, HashTable *myht TSRMLS_DC)
 		{
 			zval            **z_timezone = NULL;
@@ -196,9 +223,12 @@ tags:
 			return FAILURE;
 		}
 
-	* 通过源码我们可以看出来zend_hash_find从HashTable中找出指向timezone的zval指针然后保存到了z_timezone. 然后timezone_initialize会利用z_timezone对tzobj进行初始化,用gdb来看看内存中的数据:
+```
+
+* 通过源码我们可以看出来zend_hash_find从HashTable中找出指向timezone的zval指针然后保存到了z_timezone. 然后timezone_initialize会利用z_timezone对tzobj进行初始化,用gdb来看看内存中的数据:
 	执行next单步指令,将程序运行到return SUCCESS这一行, 然后观察两个参数.
-		                
+
+```		                
 	(gdb) p **z_timezone
 	$32 = {value = {lval = 140737353987888, dval = 6.953349169201402e-310, str = {val = 0x7ffff7fdb730 "+08:00", len = 6} , ht = 0x7ffff7fdb730, obj = {handle = 4160599856, handlers = 0x6}}, refcount__gc = 1, type = 6 '\006', is_ref__gc = 0 '\000'}
 
@@ -208,28 +238,30 @@ tags:
 	$33 = {std = {ce = 0xfe9c00, properties = 0x7ffff7fdbc28, properties_table = 0x0, guards = 0x0}, initialized = 1, type = 1, tzi = {tz = 0xfffffffffffffe20, utc_offset = -480, z = {utc_offset = -480, abbr = 0x0, dst = 0}}, props = 0x0}
 
 	可以看到tzobj对象经过初始化后已经被填充了数据,也就是到这一步反序列化恢复对象工作完成了.
-
-
+```	
 ## 5. 利用反序列化
+	
+```
 	还是用DateTimeZone序列化字符串作为例子, 但是这次作一点小小的修改:
 	原始:
 	O:12:"DateTimeZone":2:{s:13:"timezone_type";i:1;s:8:"timezone";s:6:"+08:00";}
 	修改:
 	O:12:"DateTimeZone":2:{s:13:"timezone_type";i:1;s:8:"timezone";i:1123123123;}
-	
+```
+
+```	
 	user@local:~/workspace$ ../php/php-5.5.14/bin/php 001.php 
 
 	Warning: DateTimeZone::__wakeup(): Unknown or bad timezone (
                                                              T���_�~����}=b��7�w-��_���h)	�5��ǡ�ޖ��Xx���Wcr"�Ã��F��
 	��T0.S�Hُ(1�m���X���4a�(�s<|��J]��d�]B�> ���Eꫪ�Ol��O��B�Bǵ�j�;Oe!�A�y��M��jGK�Pb�=��b�F&�[���������$�t�i
+```
 
 
-
-
-
-	运行后发现一些有趣的东西, 看到了一些不能识别的字符. 对上反序列化字符串可以发现:s:6:"+08:00"被替换成了i:1123123123,
-	这个时候应该已经可以猜到了, DataTimeZone在重建的时候把最后一个对象认为是一个指向字符串的指针了（这个值可以随意修改指向当前进程空间的任何位置). 再看看timezone_initialize函数:
-
+* 运行后发现一些有趣的东西, 看到了一些不能识别的字符. 对上反序列化字符串可以发现:s:6:"+08:00"被替换成了i:1123123123,
+* 这个时候应该已经可以猜到了, DataTimeZone在重建的时候把最后一个对象认为是一个指向字符串的指针了（这个值可以随意修改指向当前进程空间的任何位置). 再看看timezone_initialize函数:
+	
+```
 	static int timezone_initialize(php_timezone_obj *tzobj, /*const*/ char *tz TSRMLS_DC)
 	{
 		timelib_time *dummy_t = ecalloc(1, sizeof(timelib_time));
@@ -247,9 +279,16 @@ tags:
 			return SUCCESS;
 		}
 	}
-	本来i:1123123123应该指向一个合法的表示时区的字符串，但现在指针的值经过修改后指向了一个内存空间，可以看到timelib_parse_zone函数如果解析失败,php_error_docref就会将原本应该指向一个合法字符串的指针指向的数据给打印到终端最.
+```
+	
+   * 本来i:1123123123应该指向一个合法的表示时区的字符串，但现在指针的值经过修改后指向了一个内存空间，可以看到timelib_parse_zone函数如果解析失败,php_error_docref就会将原本应该指向一个合法字符串的指针指向的数据给打印到终端.
 	
 	
+
+
+
+	
+
 
 	
 	
