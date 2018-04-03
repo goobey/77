@@ -1,0 +1,206 @@
+---
+layout:     post
+title:      "使用树莓派搭建和黑化WiFi钓鱼系统（router-pi）（原创)"
+subtitle:   ""
+date:       2018-04-03 23:10:00
+author:     "anqing"
+header-img: ""
+header-mask: 0.3
+catalog:    true
+tags:
+    - 互联网
+    - 安全
+    - 原创
+    - 无线安全
+---
+
+# 使用树莓派搭建和黑化WiFi钓鱼系统（router-pi）（原创)
+
+---
+### 使用树莓派搭建和黑化WiFi钓鱼系统（router-pi）
+
+
+* ### 硬件
+	
+	* Raspberry Pi 3：（1.2GHz Quad-Core ARM Cortex-A53、Broadcom BCM2387 chipset、802.11 bgn Wireless LAN and Bluetooth 4.1）
+	* 存储 (SD卡)：  
+   * USB无线网卡：（TP-Link WN722N）  
+* ### 软件
+	* OS (Raspbian Stretch Lite):   
+	* DHCP Server (isc-dhcp-server 或者 dnsmasq):  
+	* DNS Server(DNSMasq):  
+
+* ### 开始部署：
+	* 安装操作系统：
+		1. 系统下载地址：https://downloads.raspberrypi.org/raspbian_lite_latest
+		2. 写入系统镜像：准备一个不小于8G的SD卡，将下载好的系统镜像写入到SD中．推荐在Linux系统下使用dd写入，Windows下可用Win32DiskImager．
+		3. 调整分区大小：如果SD卡大于8G并且想充分利用剩余空间请往下看，否则请跳过，Windows系统的也请跳过．
+			* 将SD卡接入到电脑，执行sudo fdisk -l 找到sd卡的设备文件路径，我这是/dev/sdc．
+			* 创建两个文件夹，执行cd ~ && mkdir bak sdc2,　bak用来保存SD卡中的数据，sdc2作为/dev/sdc2的挂载点．
+			* 挂载sdc2，执行 sudo mount /dev/sdc2 /home/xxxx/sdc2
+			* 备份文件，先进入刚才创建的bak目录，执行 cd /home/xxxx/bak；然后拷贝文件(一定记得带权限拷贝)到当前目录，执行cp -R -p ../sdc2/* ./ 
+			* 卸载分区，sudo umount /dev/sdc2
+			* 重新分区, 执行sudo fdisk /dev/sdc进入磁盘分区程序；命令p可以打印当前的分区个数，当前SD卡有两个分区，分区１为Boot分区保存系统的内核文件启动文件；分区２为文件系统根分区．上一步我们备份的就是文件系统．
+			* 删出分区２，输入命令d 然后回车，提示要删除的分区号，直接输入２回车；完成后可以输入p打印磁盘分区验证一下．
+			* 重新创建分区2，输入命令n 回车，提示分区类型的时候选择p主分区，分区号默认为2直接回车，当提示起始扇区的时候要留意一下是否为1号分区终止扇区加1，终止扇区默认确认无误后回车． 
+			* 保存修改，执行w回车．
+			* 格式化分区，执行命令 sudo mkfs.ext4 /dev/sdc2
+			* 最后重新将sdc2挂载到刚才创建的目录中，将备份的数据拷贝回来就好了，记得带权限拷贝．
+		4. 启动系统：将SD卡插回到数莓派后加点启动，默认用户名是pi，密码raspberry
+		5. 登录系统后先更新apt，然后再安装下ssh server,  
+
+			> sudo apt update  # 更新apt  
+			> sudo apt install openssh-server　#　安装ssh server  
+			> sudo systemctl enable sshd # 开启运行ssh server  
+			> sudo systemctl start sshd # 启动ssh server  
+	* 安装Hostapd：
+		1. 安装软件包: sudo apt install hostapd  
+		2. 软件包安装好后，我们需要为程序创建一个配置文件，配置文件模板在/usr/share/doc/hostapd/examples/hostapd.conf.gz，我这就直接放精简版本好了．配置文件创建好后，通过 `sudo systemctl enable hostapd` 设置开机启动．
+
+			```
+			＃ /etc/hostapd/hostapd.conf
+			ssid=ASUS  # 热点名称  
+			hw_mode=g　# 工作在802.11G模式  
+			channel=1　# 频道１  
+			interface=wlan0　＃ 用来创建AP的无线网卡  
+			driver=nl80211　# 驱动，默认这个就好  
+			ignore_broadcast_ssid=0　# 是否隐藏ssid,当然不  
+			macaddr_acl=0 # mac地址访问控制列表，细节参见模板文件&baidu  
+			auth_algs=3 # 验证模式，1表示开放系统验证，2表示预共享密钥认证，３表示都支持:P  
+			wpa=3 # 表示wpa与wpa2都支持．  
+			wpa_passphrase=xxxx #　wifi密钥  
+			wpa_key_mgmt=WPA-PSK
+			wpa_pairwise=TKIP CCMP  
+			rsn_pairwise=CCMP  
+			```
+		
+		3. 配置网卡IP地址：
+			* 给AP指定一个IP地址，作为网关地址  
+			*  配置文件路径：/etc/network/interfaces.d/wlan0  
+
+				```
+				auto wlan0   
+				iface wlan0 inet static  
+						address 172.18.255.254  
+						netmask 255.255.0.0  
+				```
+
+		4. 启动服务`sudo systemctl start hostapd`，如果没有什么问题此时就可以发现一个ASUS的热点了．如果现在连接会发现一直提示正在配置网络，因为此时dhcp服务没有配置，客户端没有IP地址．
+
+	* 安装isc-dhcp-server:
+		> sudo apt install isc-dhcp-server #安装软件包
+		
+		```
+	 路径：/etc/dhcp/dhcpd.conf  
+		# 文件尾部添加一下内容  
+		subnet 172.18.0.0 netmask 255.255.0.0 {  
+				range 172.18.0.1 172.18.0.250;  # dhcp池
+				option domain-name-servers 172.18.255.254;　# DNS这个应该设置成网关网关地址，这里是172.18.255.254  
+				option routers 172.18.255.254;  # 给客户端指定的默认网关
+				default-lease-time 600;  ＃　默认租约时间
+				max-lease-time 7200;  ＃　最大租约时间
+		}
+```
+		> sudo systemctl enable isc-dhcp-server 设置开机启动
+		> sudo systemctl start isc-dhcp-server 启动服务
+		> 重新连接AP应该可以正常获取IP地址了．
+
+	* 配置路由与地址转换
+		* 开启ipv4包转发：修改/etc/sysctl.conf，取消注释net.ipv4.ip_forward=1．
+		* 启用地址伪装: 数莓派eth0作为wan接口连接internet．执行`sudo iptables -t nat -A POSTROUTING -s 172.18.0.0/16 -o eth0 -j MASQUERADE`
+		* 保存iptables　`sudo iptables-save > /etc/iptables.rules`,并创建以下文件确保系统在启动的时候重新加载iptables.rules  
+
+		```
+				创建/etc/network/if-pre-up.d/iptables  
+				内容如下:  
+				#!/bin/sh  
+				iptables-restore /etc/iptables.rules  
+		```
+
+		
+		* 到这里我们就成功将树莓派３打造成了一台正儿八经无线路由器了，是的很正经:P
+		
+
+* ### router-pi的第一次进化:
+	* 通过上面的配置router-pi就此诞生．对比其他硬件wifi路由器router-pi比较弱势，为了节省空间它的天线是直接蚀刻到电路板上小到我都看不到（其实是我没有找到天线位置）；而且作为软AP在信号处理速度上也是远远不及硬件WiFi路由器．当然router-pi并不是要去硬拼别人的强项，它非常娇小灵活能胜任很多硬件无线路由器不能胜任的工作．下面我们设想这样一个场景:  
+		* router-pi诞生后感觉很孤单，它很羡慕别的无线路由器有很多的小伙伴连接陪他玩耍；就比如那个叫GoodBoy的家伙，有很多的小伙伴每天都来找它玩耍，还有很多慕名而来的；router-pi很难过，它希望能够像GoodBoy一样受欢迎，但现实往往是残酷的，router-pi很沮丧．  
+		* 某天一个陌生的面孔出现了，说要找GoodBoy一起玩耍，她看了router-pi一眼后就走开了，她是来找GoodBoy的．router-pi看着她去到了GoodBoy那边；＂要是我就是GoodBoy多好啊＂，router-pi心里默默想着．第二天它就开始了自己的计划：  
+			1. 修改SSID为GoodBoy
+			2. 修改认证方式
+			3. 修改连接密码  
+		* 此刻router-pi拥有了新的名字'GoodBoy',或者我们应该叫它GoodBoy(pi).　它一遍又一遍的高喊着'我是GoodBoy,我是GoodBoy'一遍又一遍...
+		* 慢慢的有些慕名来找GoodBoy玩耍的小伙伴们也跟GoodBoy(pi)玩耍了，＇这是一个好的开始＇GoodBoy(pi)私下里这样想着．日子一天天过去，来找GoodBoy(pi)玩耍的小伙伴始终少得可怜；它开始很不理解？为什么小伙伴们还是不愿意跟它一起玩耍．后来它发现真实的GoodBoy外形很酷，信号很强而且速度很快，GoodBoy(pi)意识到自己这方面根本不是对手．（＂要是GoodBoy出了问题才好＂它如此想..）
+		* GoodBoy(pi)认为这样下去不行，它打算提升自己并开始认真阅读802.11协议的相关资料,直到它看到了这一段内容：
+		
+			```
+			管理帧的类型：
+					Beacon（信标）帧：主要用于声明某个网络的存在
+					Probe Request 帧：移动式工作站用于扫描所在区域内有哪些802.11网络。
+					Probe Resonse帧：如果Probe Request所检查的网络与之兼容，该网络用Probe Request响应。
+					IBSS ATIM帧：IBSS without AP,无法依赖AP缓存帧，IBSS工作站为处于休眠状态的接收者缓存帧，就会在传递期间送出一个ATIM帧通知对方有消息待传。
+					Disassociation帧与Deauthentication帧：用于结束一段认证关系
+					Association Request帧：移动式工作站找到兼容网络并通过身份验证，便发送Association Request帧以试图加入网络。
+					Reassociation Request 帧：位于相同扩展服务区域，但在不同基本服务区域间游走的移动式工作站，再次使用分布式系统时，必须与网络重新关联。
+					Association Response帧与Reassociation Response帧：
+					Authentication帧：
+					Aciton 帧：用于触发测量动作。
+			```
+		* 仿佛一道曙光照亮的前路，GoodBoy(pi)很兴奋，它查阅资料发现管理帧是没有加密的（wpa3会修复这个漏洞），也就是任何人都可以伪造一个Deauthentication帧发送给目标无线热点或者目标客户端让收到这个数据的一方解除认证断开连接．下面这张图片是DeAuth的帧结构．
+		![](/img/in-post/wifi/1.jpeg)
+		
+		* GoodBoy(pi)给自己添加了一个功能，探听GoodBoy与它的小伙伴们的通信并获取他们的通信地址，然后对他们发送伪造DeAuth数据帧，让他们都以为自己连接的热点不提供服务了（拒绝服务攻击）．
+		* 从此GoodBoy(Pi)取代了原来GoodBoy的位置，它成了＇真正＇的GoodBoy，和它梦寐以求的小伙伴们一起开心的玩耍．
+
+	* 通过上面的场景我们知道要对一个WiFi热点进行劫持，我们只需要获取它的SSID/认证方式/密钥即可创建一个表面上与它一模一样的WiFi热点；剩下的工作只需要让目标路由器无法正常工作，用户自然会来连接我们伪造的WiFi热点．我们先了解一下aircrack-ng套件,我们会用到几个工具：  
+		* Aircrack-ng：无线密码破解
+		* Aireplay：生成网络数据，去客户端验证
+		* Airodump-ng：数据包捕捉
+		* Airbase-ng：配置伪造的接入点
+		* Airmon-ng：启用和禁用无线接口上的监控模式
+
+	* 这里我们只需要用到airodump-ng与aireplay-ng  
+		* 第一步：我们需要将无线网卡设置成监听模式, `iw dev {无线网卡名称(WN722N)} set type monitor 或者 iwconfig {无线网卡名称(WN722N)}　mode monitor　再或者 airmon start {无线网卡名称(WN722N)}`，这几种方式看个人习惯．  
+		* 第二步：抓取我们需要的数据，执行命令`airodump-ng {无线网卡的名称(WN722N)}`会抓取所有监听到的wifi通信数据包，面板上半部分是当前范围空间监听到的wifi热点信息列表，包括ssid/bssid/channel/认证方式等信息；下半部分显示的是WiFi客户端与热点的关联列表．我们只需要获取目标热点的bssid也就是MAC地址．  
+		* 第三步：拒绝服务攻击，执行命令`aireplay-ng -0 0 -a {bssid} # aireplay-ng --help还有很多功能等着你`；命令中的`-0 0`第一个０表示攻击类型为--deauth，第二个零表示重复发送DeAuth的数据帧进行攻击，也可以替换成一个整数表示攻击次数．命令中我们只填写了bssid所以目标热点上的所有客户端都会被DeAuth．在目标热点无法提供服务的时候客户端就会去连接我们伪造的热点，当然那些绑定了bssid的客户端是没有办法的．  
+		* 通过以上三步我们完成了DeAuth攻击；当然我们除了使用aircrack-ng套件以外还有很多其他的选择，比如scapy是一个python库方便我们组装各种数据帧，还有libpcap等．
+  
+					```
+					# python3
+					> from scapy.all import *  
+					> bssid = '{bssid}'  
+					> client = '{目标客户端mac地址}  
+					> packet = RadioTap(present=0)/Dot11(type=0,subtype=12,addr1=client,addr2=bssid,addr3=bssid)/Dot11Deauth(reason=7)  
+					> sendp(packet, iface='{无线网卡的名称(WN722N)}')  
+					```
+
+		* 上面的代码中addr1设置成广播地址FF:FF:FF:FF:FF:FF会造成所有连接到目标热点的客户端断开连接．  
+	
+
+	* ### router-pi的黑化
+		* 某一天，一个黑衣人来找到了router-pi说可以帮它拥有更多的小伙伴；那个人劝说router-pi要了解小伙伴们的需求才能提供更好的服务，但是必须要安装一个软件模块．一直以来router-pi只是作为一个信使在默默的为大家服务，它希望提升自己服务更多的人．那个黑衣人承诺会给它升级更好的计算性能与更高的信号覆盖范围，这个条件显然打动了router-pi；于是router-pi开始去了解那个模块：mitmproxy这个软件会将小伙伴们的信件拆开来看一眼然后再投递出去；虽然理智告诉router-pi这样做不好...  
+		* Mitmproxy是一款支持HTTP(S)的中间人代理工具，支持编写脚本来批量处理请求。Mitmproxy使用Python开发，是辅助web开发&测试，移动端调试，渗透测试的工具。
+		* 安装MiTMProxy, 执行命令`sudo apt install mitmproxy`.
+		* MiTMProxy支持终端和web显示模式，其中mitmdump输出类似tcpdump.我们主要用到的是mitmweb．直接运行mitmweb命令就可以启动代理了，默认监听端口是8080，默认管理端口为8081．
+		* 代理程序运行起来后，我们设置web浏览器的代理地址，http/https请求所有数据就会呈现在mitmproxy的管理页面．
+		* 当然无线客户端用户可不会去设置什么http代理，所以我们需要在router-pi中设置一个透明代理:  
+			`> sudo iptables -t nat -A PREROUTING -i ｛AP网卡名称（树莓派内置）｝ -p tcp --dport 80 -j REDIRECT --to-port 8080`  
+			`> sudo iptables-save > /etc/iptables.rules`
+		* 运行上面两条命令将所有的http流量都重定向到了本机的8080端口(-j REDIRECT只对本机起作用)，其它如https端口也如法炮制，改一下--dport就好．
+		* 关于https的流量分析，我建议还是用mitmproxy的反向代理配合dnsmasq的dns劫持比较好，mitmproxy反向代理会将https进行剥离，到客户端那里就降级成http协议（用户在地址中明确指定使用https协议这个方法就无效了），不会提示证书问题了．dnsmasq做dns劫持很简单就不说了，配置文件添加一条记录就行了．
+
+
+
+
+	
+	
+
+
+
+	
+
+
+	
+	
+
+	
+
