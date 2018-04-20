@@ -45,7 +45,7 @@ tags:
 
 ​ 在https传输过程中，密文是可见的。
 
-![](/img/in-post/https/cbc.png)
+![](/img/in-post/https/cbc.PNG)
 
 
 
@@ -106,7 +106,7 @@ tags:
 1. 猜解某些固定的明文 。譬如请求方法，User-Agent等。这些信息一般是固定的，猜解比较容易。
 2. 对这些明文数据进行填充，使cookie等有效内容的第一位处在某一个分组的最后一位。
 
-![](/img/in-post/https/beast.png)
+![](/img/in-post/https/beast.PNG)
 ​
 
 3. 发送（已知内容+猜解内容）来猜解cookie的第一位。
